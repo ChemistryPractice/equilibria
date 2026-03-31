@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equilibria Practice Hub</title>
+
+<style>
+:root { 
+    --primary: #2c3e50; 
+    --accent: #27ae60; 
+    --error: #c0392b; 
+    --bg: #f4f7f6; 
+    --sidebar-w: 260px; 
+}
+
+body { 
+    font-family: 'Segoe UI', sans-serif; 
+    background: var(--bg); 
+    margin: 0; 
+    display: flex; 
+    height: 100vh; 
+    overflow: hidden; 
+}
+
+/* Sidebar */
+#sidebar { 
+    width: var(--sidebar-w); 
+    background: var(--primary); 
+    color: white; 
+    display: flex; 
+    flex-direction: column; 
+    padding: 20px; 
+}
+
+#sidebar h2 { 
+    text-align: center; 
+    margin-bottom: 20px; 
+}
+
+.nav-btn { 
+    background: none; 
+    border: 1px solid #455a64; 
+    color: white; 
+    padding: 12px; 
+    margin-bottom: 8px; 
+    border-radius: 5px; 
+    cursor: pointer; 
+}
+
+.nav-btn:hover { background: #34495e; }
+.nav-btn.active { background: var(--accent); }
+
+.ref-group { 
+    margin-top: auto; 
+    border-top: 1px solid #455a64; 
+    padding-top: 20px; 
+}
+
+.ref-btn { background: #7f8c8d; }
+
+/* Main */
+#main-content { 
+    flex-grow: 1; 
+    padding: 40px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+}
+
+.card { 
+    background: white; 
+    padding: 30px; 
+    border-radius: 15px; 
+    width: 100%; 
+    max-width: 700px; 
+}
+
+/* Problem container */
+#problem-area {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    margin-top: 20px;
+}
+
+/* Overlay tools */
+.overlay { 
+    display: none; 
+    position: fixed; 
+    top: 10%; 
+    left: 300px; 
+    right: 50px; 
+    bottom: 10%; 
+    background: white; 
+    border-radius: 10px; 
+    z-index: 100; 
+    padding: 20px; 
+}
+
+.overlay-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.close-btn {
+    background: var(--error);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<div id="sidebar">
+    <h2>Equilibria</h2>
+
+    <button class="nav-btn active" onclick="loadTopic('general', event)">
+        General Equilibrium (Kc, Kp)
+    </button>
+
+    <button class="nav-btn" onclick="loadTopic('acidbase', event)">
+        Acid / Base (Ka, Kb, Kw)
+    </button>
+
+    <button class="nav-btn" onclick="loadTopic('solubility', event)">
+        Solubility (Ksp)
+    </button>
+
+    <div class="ref-group">
+        <button class="nav-btn ref-btn" onclick="toggleRef('calc')">Calculator</button>
+        <button class="nav-btn ref-btn" onclick="toggleRef('ptable')">Periodic Table</button>
+        <button class="nav-btn ref-btn" onclick="toggleRef('eqn')">Equation Sheet</button>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div id="main-content">
+    <div class="card">
+        <h1 id="topic-title">General Equilibrium</h1>
+
+        <div id="problem-area">
+            Select a topic to begin practicing equilibrium problems.
+        </div>
+    </div>
+</div>
+
+<!-- Overlays -->
+<div id="calc" class="overlay">
+    <div class="overlay-header">
+        <h3>Calculator</h3>
+        <button class="close-btn" onclick="toggleRef('calc')">X</button>
+    </div>
+    <iframe src="https://www.desmos.com/scientific" width="100%" height="90%"></iframe>
+</div>
+
+<div id="ptable" class="overlay">
+    <div class="overlay-header">
+        <h3>Periodic Table</h3>
+        <button class="close-btn" onclick="toggleRef('ptable')">X</button>
+    </div>
+    <iframe src="https://ptable.com" width="100%" height="90%"></iframe>
+</div>
+
+<div id="eqn" class="overlay">
+    <div class="overlay-header">
+        <h3>Equation Sheet</h3>
+        <button class="close-btn" onclick="toggleRef('eqn')">X</button>
+    </div>
+    <object data="Equation_Sheet2.pdf" width="100%" height="90%"></object>
+</div>
+
+<!-- Script -->
+<script>
+function loadTopic(topic, event) {
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    let title = "";
+    let text = "";
+
+    if (topic === "general") {
+        title = "General Equilibrium";
+        text = "Practice problems involving Kc, Kp, ICE tables, and equilibrium shifts.";
+    }
+
+    if (topic === "acidbase") {
+        title = "Acid-Base Equilibrium";
+        text = "Practice Ka, Kb, pH, pOH, and buffer systems.";
+    }
+
+    if (topic === "solubility") {
+        title = "Solubility Equilibrium";
+        text = "Practice Ksp, molar solubility, and precipitation.";
+    }
+
+    document.getElementById("topic-title").innerText = title;
+    document.getElementById("problem-area").innerText = text;
+}
+
+function toggleRef(id) {
+    let el = document.getElementById(id);
+    el.style.display = (el.style.display === "block") ? "none" : "block";
+}
+</script>
+
+</body>
+</html>
