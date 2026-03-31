@@ -174,38 +174,160 @@ body {
 </div>
 
 <!-- Script -->
-<script>
-function loadTopic(topic, event) {
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+// ====== GLOBAL ======
+let currentProblem = null;
 
-    let title = "";
-    let text = "";
+// Load General Equilibrium automatically
+window.onload = () => generateProblem();
 
-    if (topic === "general") {
-        title = "General Equilibrium";
-        text = "Practice problems involving Kc, Kp, ICE tables, and equilibrium shifts.";
-    }
+// ====== MAIN GENERATOR ======
+function generateProblem() {
+    const types = ["K_from_data", "equilibrium_conc", "Q_direction"];
+    const type = types[Math.floor(Math.random() * types.length)];
 
-    if (topic === "acidbase") {
-        title = "Acid-Base Equilibrium";
-        text = "Practice Ka, Kb, pH, pOH, and buffer systems.";
-    }
+    if (type === "K_from_data") currentProblem = genKProblem();
+    if (type === "equilibrium_conc") currentProblem = genEquilibriumConc();
+    if (type === "Q_direction") currentProblem = genQProblem();
 
-    if (topic === "solubility") {
-        title = "Solubility Equilibrium";
-        text = "Practice Ksp, molar solubility, and precipitation.";
-    }
-
-    document.getElementById("topic-title").innerText = title;
-    document.getElementById("problem-area").innerText = text;
+    displayProblem();
 }
 
-function toggleRef(id) {
-    let el = document.getElementById(id);
-    el.style.display = (el.style.display === "block") ? "none" : "block";
+// ====== DISPLAY ======
+function displayProblem() {
+    document.getElementById("problem-area").innerHTML = `
+        <div><strong>Reaction:</strong><br>${currentProblem.equation}</div><br>
+        <div><strong>Given:</strong><br>${currentProblem.given}</div><br>
+        <div><strong>Question:</strong><br>${currentProblem.question}</div><br>
+        <button onclick="showAnswer()">Show Answer & Explanation</button>
+        <div id="answer-box" style="margin-top:20px; display:none;"></div>
+    `;
+
+    if (window.MathJax) MathJax.typeset();
 }
-</script>
+
+// ====== SHOW ANSWER ======
+function showAnswer() {
+    const box = document.getElementById("answer-box");
+    box.style.display = "block";
+    box.innerHTML = `
+        <strong>Answer:</strong><br>${currentProblem.answer}<br><br>
+        <strong>Explanation:</strong><br>${currentProblem.explanation}
+    `;
+    MathJax.typeset();
+}
+
+// =====================================================
+// =============== PROBLEM GENERATORS ===================
+// =====================================================
+
+// ---------- TYPE 1: FIND K ----------
+function genKProblem() {
+    let a = 1, b = 1, c = 1;
+
+    let initA = rand(1.0, 2.0);
+    let initB = rand(1.0, 2.0);
+    let change = rand(0.2, 0.8);
+
+    let eqA = (initA - change).toFixed(2);
+    let eqB = (initB - change).toFixed(2);
+    let eqC = (change).toFixed(2);
+
+    let K = ((eqC) / (eqA * eqB)).toFixed(3);
+
+    return {
+        equation: `$$A(g) + B(g) \\rightleftharpoons C(g)$$`,
+        given: `
+            Initial: [A] = ${initA} M, [B] = ${initB} M<br>
+            At equilibrium: [C] = ${eqC} M
+        `,
+        question: `Calculate the value of $K_c$.`,
+        answer: `$K_c = ${K}$`,
+        explanation: `
+            ICE Table:<br>
+            I: ${initA}, ${initB}, 0<br>
+            C: -x, -x, +x<br>
+            E: ${eqA}, ${eqB}, ${eqC}<br><br>
+
+            $K_c = \\frac{[C]}{[A][B]} = \\frac{${eqC}}{(${eqA})(${eqB})} = ${K}$
+        `
+    };
+}
+
+// ---------- TYPE 2: FIND EQUILIBRIUM ----------
+function genEquilibriumConc() {
+    let initA = rand(1.0, 2.0);
+    let initB = rand(1.0, 2.0);
+    let K = rand(2, 10);
+
+    let x = 0.5; // controlled (no quadratic)
+    let eqA = (initA - x).toFixed(2);
+    let eqB = (initB - x).toFixed(2);
+    let eqC = (x).toFixed(2);
+
+    return {
+        equation: `$$A(g) + B(g) \\rightleftharpoons C(g)$$`,
+        given: `
+            $K_c = ${K}$<br>
+            Initial: [A] = ${initA}, [B] = ${initB}
+        `,
+        question: `Determine equilibrium concentrations (assume simple change).`,
+        answer: `
+            [A] = ${eqA} M<br>
+            [B] = ${eqB} M<br>
+            [C] = ${eqC} M
+        `,
+        explanation: `
+            ICE Table:<br>
+            I: ${initA}, ${initB}, 0<br>
+            C: -x, -x, +x<br>
+            E: ${eqA}, ${eqB}, ${eqC}<br><br>
+
+            Values chosen to avoid quadratic solving.
+        `
+    };
+}
+
+// ---------- TYPE 3: Q vs K ----------
+function genQProblem() {
+    let A = rand(0.5, 2.0);
+    let B = rand(0.5, 2.0);
+    let C = rand(0.1, 1.0);
+
+    let K = rand(0.5, 2.0);
+    let Q = (C / (A * B)).toFixed(2);
+
+    let direction = "";
+
+    if (Q > K) direction = "shift left (toward reactants)";
+    else if (Q < K) direction = "shift right (toward products)";
+    else direction = "at equilibrium";
+
+    return {
+        equation: `$$A(g) + B(g) \\rightleftharpoons C(g)$$`,
+        given: `
+            [A] = ${A}, [B] = ${B}, [C] = ${C}<br>
+            $K_c = ${K}$
+        `,
+        question: `Calculate Q and determine direction of shift.`,
+        answer: `
+            $Q = ${Q}$<br>
+            System will ${direction}
+        `,
+        explanation: `
+            $Q = \\frac{[C]}{[A][B]} = \\frac{${C}}{(${A})(${B})} = ${Q}$<br><br>
+
+            Compare Q to K:<br>
+            ${Q} ${Q > K ? ">" : "<"} ${K}<br><br>
+
+            Therefore, system will ${direction}.
+        `
+    };
+}
+
+// ====== RANDOM NUMBER HELPER ======
+function rand(min, max) {
+    return (Math.random() * (max - min) + min).toFixed(2);
+}
 
 </body>
 </html>
