@@ -216,12 +216,10 @@ const SALTS = [
 let currentProblem = null;
 let activeTopic = 'general';
 
-// Helper for random numbers
 function rand(min, max, decimals = 2) {
     return parseFloat((Math.random() * (max - min) + min).toFixed(decimals));
 }
 
-// Helper for scientific notation in text
 function formatSci(num) {
     return num < 0.001 ? num.toExponential(2) : num.toFixed(3);
 }
@@ -229,15 +227,8 @@ function formatSci(num) {
 // =====================================================
 // 3. NAVIGATION & UI CONTROL
 // =====================================================
-
-// Load General Equilibrium view on start
-window.onload = () => {
-    // Optional: auto-load first topic or keep instruction box visible
-};
-
 function loadTopic(topic, event) {
     activeTopic = topic;
-    
     const titles = {
         'general': 'General Equilibrium (Kc, Kp)',
         'acidbase': 'Acid / Base (Ka, Kb, Kw)',
@@ -245,15 +236,10 @@ function loadTopic(topic, event) {
     };
     
     document.getElementById('topic-title').innerText = titles[topic];
-
-    // Update Sidebar Button Styles
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     if(event) event.target.classList.add('active');
 
-    // Hide the instruction box once they start playing
     document.getElementById('instruction-box').style.display = 'none';
-    
-    // Show the "Generate" button and clear old work
     document.getElementById('gen-btn').style.display = 'inline-block';
     document.getElementById("problem-text").innerText = "Press the button to generate a " + titles[topic] + " problem.";
     document.getElementById("interaction-area").innerHTML = "";
@@ -268,15 +254,12 @@ function toggleRef(id) {
 // 4. MAIN GENERATOR ENGINE
 // =====================================================
 function generateProblem() {
-    // Clear the interaction area/answer box
     const interaction = document.getElementById("interaction-area");
     interaction.innerHTML = ""; 
 
-    // Logic Switcher based on Sidebar choice
     if (activeTopic === 'general') {
         const types = ["K_from_data", "equilibrium_conc", "Q_direction"];
         const type = types[Math.floor(Math.random() * types.length)];
-        
         if (type === "K_from_data") currentProblem = genKProblem();
         if (type === "equilibrium_conc") currentProblem = genEquilibriumConc();
         if (type === "Q_direction") currentProblem = genQProblem();
@@ -284,7 +267,6 @@ function generateProblem() {
     else if (activeTopic === 'acidbase') {
         const types = ["pH_from_Ka", "common_ion_acid"];
         const type = types[Math.floor(Math.random() * types.length)];
-        
         if (type === "pH_from_Ka") currentProblem = genAcidBase();
         if (type === "common_ion_acid") currentProblem = genCommonIonAcid();
     }
@@ -299,9 +281,6 @@ function generateProblem() {
 // 5. DISPLAY & MATH RENDERING
 // =====================================================
 function displayProblem() {
-    const problemArea = document.getElementById("problem-area");
-    
-    // Construct HTML inside the card
     document.getElementById("problem-text").innerHTML = `
         <div style="margin-bottom:15px;"><strong>Reaction:</strong><br>${currentProblem.equation}</div>
         <div style="margin-bottom:15px;"><strong>Given:</strong><br>${currentProblem.given}</div>
@@ -314,7 +293,6 @@ function displayProblem() {
         <div id="answer-box" style="margin-top:20px; display:none; border-top: 2px solid #eee; padding-top:15px; text-align:left;"></div>
     `;
 
-    // Trigger MathJax
     if (window.MathJax) {
         MathJax.typesetPromise();
     }
@@ -333,10 +311,9 @@ function showAnswer() {
 }
 
 // =====================================================
-// 6. PROBLEM GENERATORS (The "Brains")
+// 6. PROBLEM GENERATORS
 // =====================================================
 
-// --- TYPE: General K (Your Original Logic) ---
 function genKProblem() {
     let initA = rand(1.0, 2.0);
     let initB = rand(1.0, 2.0);
@@ -355,12 +332,11 @@ function genKProblem() {
     };
 }
 
-// --- TYPE: Equilibrium Conc (Your Original Logic) ---
 function genEquilibriumConc() {
     let initA = rand(1.0, 2.0);
     let initB = rand(1.0, 2.0);
     let K = rand(2, 10);
-    let x = 0.5; // Controlled for simplicity
+    let x = 0.5; 
     let eqA = (initA - x).toFixed(2);
     let eqB = (initB - x).toFixed(2);
     let eqC = (x).toFixed(2);
@@ -374,7 +350,6 @@ function genEquilibriumConc() {
     };
 }
 
-// --- TYPE: Q vs K (Your Original Logic) ---
 function genQProblem() {
     let A = rand(0.5, 2.0);
     let B = rand(0.5, 2.0);
@@ -392,7 +367,6 @@ function genQProblem() {
     };
 }
 
-// --- TYPE: Acid/Base pH from Ka ---
 function genAcidBase() {
     const acid = ACIDS[Math.floor(Math.random() * ACIDS.length)];
     const conc = rand(0.1, 0.6);
@@ -408,7 +382,6 @@ function genAcidBase() {
     };
 }
 
-// --- TYPE: Common Ion Acid (Buffer) ---
 function genCommonIonAcid() {
     const acid = ACIDS[0]; // Acetic
     const acidConc = rand(0.1, 0.5);
@@ -417,7 +390,7 @@ function genCommonIonAcid() {
     const ph = pKa + Math.log10(saltConc / acidConc);
 
     return {
-        equation: `$$\\text{HC}_2\text{H}_3\text{O}_2 \rightleftharpoons \text{H}^+ + \text{C}_2\text{H}_3\text{O}_2^-$$`,
+        equation: `$$\\text{HC}_2\\text{H}_3\\text{O}_2 \\rightleftharpoons \\text{H}^+ + \\text{C}_2\\text{H}_3\\text{O}_2^-$$`,
         given: `[Acetic Acid] = ${acidConc} M. [Sodium Acetate] = ${saltConc} M. <br> \\( K_a = 1.8 \\times 10^{-5} \\)`,
         question: `Calculate the pH of this buffer solution (Common Ion Effect).`,
         answer: `pH = ${ph.toFixed(2)}`,
@@ -425,7 +398,6 @@ function genCommonIonAcid() {
     };
 }
 
-// --- TYPE: Solubility (Ksp) ---
 function genKsp() {
     const salt = SALTS[Math.floor(Math.random() * SALTS.length)];
     let s, logic;
@@ -439,7 +411,7 @@ function genKsp() {
     }
 
     return {
-        equation: `$$\\text{${salt.formula}}(s) \\rightleftharpoons \text{Dissolved Ions}$$`,
+        equation: `$$\\text{${salt.formula}}(s) \\rightleftharpoons \\text{Dissolved Ions}$$`,
         given: `The \\( K_{sp} \\) for ${salt.name} is ${salt.Ksp.toExponential(2)}.`,
         question: `Calculate the molar solubility (s) of the salt in water.`,
         answer: `\\( s = ${s.toExponential(2)} \\) M`,
