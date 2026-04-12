@@ -110,6 +110,8 @@ body {
     cursor: pointer;
 }
 </style>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 
 <body>
@@ -140,11 +142,27 @@ body {
 <!-- Main Content -->
 <div id="main-content">
     <div class="card">
-        <h1 id="topic-title">General Equilibrium</h1>
+        <h1 id="topic-title">Equilibria Practice Hub</h1>
 
-        <div id="problem-area">
-            Select a topic to begin practicing equilibrium problems.
-            <button onclick="generateProblem()">New Problem</button>
+        <div id="instruction-box" style="background: #e8f4fd; padding: 15px; border-left: 5px solid #3498db; margin-bottom: 20px; border-radius: 5px;">
+            <strong>How to use this hub:</strong>
+            <ol style="margin-top: 10px; padding-left: 20px;">
+                <li>Select a topic from the sidebar (General, Acid/Base, or Solubility).</li>
+                <li>Click <strong>"Generate New Problem"</strong> to start.</li>
+                <li>Work the problem out on paper (don't forget your ICE tables!).</li>
+                <li>Check your final answer using the tools provided.</li>
+            </ol>
+        </div>
+
+        <div id="problem-area" style="text-align: center; min-height: 200px;">
+            <p id="problem-text">Select a topic to begin practicing equilibrium problems.</p>
+            
+            <div id="interaction-area" style="margin-top: 20px; display: none;">
+                </div>
+
+            <button id="gen-btn" class="nav-btn" style="background: var(--accent); padding: 15px 30px; margin-top: 20px; font-weight: bold; display: none;" onclick="generateProblem()">
+                Generate New Problem
+            </button>
         </div>
     </div>
 </div>
@@ -175,160 +193,258 @@ body {
 </div>
 
 <script>
-<!-- Script -->
-// ====== GLOBAL ======
+// =====================================================
+// 1. DATA COLLECTIONS (Realistic Chemicals)
+// =====================================================
+const ACIDS = [
+    { name: "Acetic Acid", formula: "HC_2H_3O_2", Ka: 1.8e-5 },
+    { name: "Formic Acid", formula: "HCHO_2", Ka: 1.8e-4 },
+    { name: "Hydrofluoric Acid", formula: "HF", Ka: 7.2e-4 },
+    { name: "Nitrous Acid", formula: "HNO_2", Ka: 4.0e-4 }
+];
+
+const SALTS = [
+    { name: "Silver Chloride", formula: "AgCl", Ksp: 1.8e-10, ratio: "1:1" },
+    { name: "Barium Sulfate", formula: "BaSO_4", Ksp: 1.1e-10, ratio: "1:1" },
+    { name: "Lead(II) Iodide", formula: "PbI_2", Ksp: 9.8e-9, ratio: "1:2" },
+    { name: "Calcium Carbonate", formula: "CaCO_3", Ksp: 3.3e-9, ratio: "1:1" }
+];
+
+// =====================================================
+// 2. GLOBAL STATE & UTILITIES
+// =====================================================
 let currentProblem = null;
+let activeTopic = 'general';
 
-// Load General Equilibrium automatically
-window.onload = () => generateProblem();
+// Helper for random numbers
+function rand(min, max, decimals = 2) {
+    return parseFloat((Math.random() * (max - min) + min).toFixed(decimals));
+}
 
-// ====== MAIN GENERATOR ======
+// Helper for scientific notation in text
+function formatSci(num) {
+    return num < 0.001 ? num.toExponential(2) : num.toFixed(3);
+}
+
+// =====================================================
+// 3. NAVIGATION & UI CONTROL
+// =====================================================
+
+// Load General Equilibrium view on start
+window.onload = () => {
+    // Optional: auto-load first topic or keep instruction box visible
+};
+
+function loadTopic(topic, event) {
+    activeTopic = topic;
+    
+    const titles = {
+        'general': 'General Equilibrium (Kc, Kp)',
+        'acidbase': 'Acid / Base (Ka, Kb, Kw)',
+        'solubility': 'Solubility (Ksp)'
+    };
+    
+    document.getElementById('topic-title').innerText = titles[topic];
+
+    // Update Sidebar Button Styles
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    if(event) event.target.classList.add('active');
+
+    // Hide the instruction box once they start playing
+    document.getElementById('instruction-box').style.display = 'none';
+    
+    // Show the "Generate" button and clear old work
+    document.getElementById('gen-btn').style.display = 'inline-block';
+    document.getElementById("problem-text").innerText = "Press the button to generate a " + titles[topic] + " problem.";
+    document.getElementById("interaction-area").innerHTML = "";
+}
+
+function toggleRef(id) {
+    const overlay = document.getElementById(id);
+    overlay.style.display = (overlay.style.display === 'block') ? 'none' : 'block';
+}
+
+// =====================================================
+// 4. MAIN GENERATOR ENGINE
+// =====================================================
 function generateProblem() {
-    const types = ["K_from_data", "equilibrium_conc", "Q_direction"];
-    const type = types[Math.floor(Math.random() * types.length)];
+    // Clear the interaction area/answer box
+    const interaction = document.getElementById("interaction-area");
+    interaction.innerHTML = ""; 
 
-    if (type === "K_from_data") currentProblem = genKProblem();
-    if (type === "equilibrium_conc") currentProblem = genEquilibriumConc();
-    if (type === "Q_direction") currentProblem = genQProblem();
+    // Logic Switcher based on Sidebar choice
+    if (activeTopic === 'general') {
+        const types = ["K_from_data", "equilibrium_conc", "Q_direction"];
+        const type = types[Math.floor(Math.random() * types.length)];
+        
+        if (type === "K_from_data") currentProblem = genKProblem();
+        if (type === "equilibrium_conc") currentProblem = genEquilibriumConc();
+        if (type === "Q_direction") currentProblem = genQProblem();
+    } 
+    else if (activeTopic === 'acidbase') {
+        const types = ["pH_from_Ka", "common_ion_acid"];
+        const type = types[Math.floor(Math.random() * types.length)];
+        
+        if (type === "pH_from_Ka") currentProblem = genAcidBase();
+        if (type === "common_ion_acid") currentProblem = genCommonIonAcid();
+    }
+    else if (activeTopic === 'solubility') {
+        currentProblem = genKsp();
+    }
 
     displayProblem();
 }
 
-// ====== DISPLAY ======
+// =====================================================
+// 5. DISPLAY & MATH RENDERING
+// =====================================================
 function displayProblem() {
-    document.getElementById("problem-area").innerHTML = `
-        <div><strong>Reaction:</strong><br>${currentProblem.equation}</div><br>
-        <div><strong>Given:</strong><br>${currentProblem.given}</div><br>
-        <div><strong>Question:</strong><br>${currentProblem.question}</div><br>
-        <button onclick="showAnswer()">Show Answer & Explanation</button>
-        <div id="answer-box" style="margin-top:20px; display:none;"></div>
+    const problemArea = document.getElementById("problem-area");
+    
+    // Construct HTML inside the card
+    document.getElementById("problem-text").innerHTML = `
+        <div style="margin-bottom:15px;"><strong>Reaction:</strong><br>${currentProblem.equation}</div>
+        <div style="margin-bottom:15px;"><strong>Given:</strong><br>${currentProblem.given}</div>
+        <div style="margin-bottom:15px;"><strong>Question:</strong><br>${currentProblem.question}</div>
+        
+        <button onclick="showAnswer()" style="background:var(--primary); color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:5px;">
+            Check Answer & Logic
+        </button>
+        
+        <div id="answer-box" style="margin-top:20px; display:none; border-top: 2px solid #eee; padding-top:15px; text-align:left;"></div>
     `;
 
-    if (window.MathJax) MathJax.typeset();
+    // Trigger MathJax
+    if (window.MathJax) {
+        MathJax.typesetPromise();
+    }
 }
 
-// ====== SHOW ANSWER ======
 function showAnswer() {
     const box = document.getElementById("answer-box");
     box.style.display = "block";
     box.innerHTML = `
-        <strong>Answer:</strong><br>${currentProblem.answer}<br><br>
-        <strong>Explanation:</strong><br>${currentProblem.explanation}
+        <div style="background:#f9f9f9; padding:15px; border-radius:8px; border-left: 5px solid var(--accent);">
+            <strong style="color:var(--accent)">Correct Answer:</strong><br>${currentProblem.answer}<br><br>
+            <strong>Step-by-Step Explanation:</strong><br>${currentProblem.explanation}
+        </div>
     `;
-    MathJax.typeset();
+    if (window.MathJax) MathJax.typesetPromise();
 }
 
 // =====================================================
-// =============== PROBLEM GENERATORS ===================
+// 6. PROBLEM GENERATORS (The "Brains")
 // =====================================================
 
-// ---------- TYPE 1: FIND K ----------
+// --- TYPE: General K (Your Original Logic) ---
 function genKProblem() {
-    let a = 1, b = 1, c = 1;
-
     let initA = rand(1.0, 2.0);
     let initB = rand(1.0, 2.0);
     let change = rand(0.2, 0.8);
-
     let eqA = (initA - change).toFixed(2);
     let eqB = (initB - change).toFixed(2);
     let eqC = (change).toFixed(2);
-
-    let K = ((eqC) / (eqA * eqB)).toFixed(3);
+    let K = (eqC / (eqA * eqB)).toFixed(3);
 
     return {
         equation: `$$A(g) + B(g) \\rightleftharpoons C(g)$$`,
-        given: `
-            Initial: [A] = ${initA} M, [B] = ${initB} M<br>
-            At equilibrium: [C] = ${eqC} M
-        `,
-        question: `Calculate the value of $K_c$.`,
-        answer: `$K_c = ${K}$`,
-        explanation: `
-            ICE Table:<br>
-            I: ${initA}, ${initB}, 0<br>
-            C: -x, -x, +x<br>
-            E: ${eqA}, ${eqB}, ${eqC}<br><br>
-
-            $K_c = \\frac{[C]}{[A][B]} = \\frac{${eqC}}{(${eqA})(${eqB})} = ${K}$
-        `
+        given: `Initial: [A] = ${initA} M, [B] = ${initB} M. <br>At equilibrium: [C] = ${eqC} M`,
+        question: `Calculate the value of \\( K_c \\).`,
+        answer: `\\( K_c = ${K} \\)`,
+        explanation: `ICE Table Check: [A]eq = ${eqA}, [B]eq = ${eqB}. <br> \\( K_c = \\frac{[C]}{[A][B]} = \\frac{${eqC}}{(${eqA})(${eqB})} = ${K} \\)`
     };
 }
 
-// ---------- TYPE 2: FIND EQUILIBRIUM ----------
+// --- TYPE: Equilibrium Conc (Your Original Logic) ---
 function genEquilibriumConc() {
     let initA = rand(1.0, 2.0);
     let initB = rand(1.0, 2.0);
     let K = rand(2, 10);
-
-    let x = 0.5; // controlled (no quadratic)
+    let x = 0.5; // Controlled for simplicity
     let eqA = (initA - x).toFixed(2);
     let eqB = (initB - x).toFixed(2);
     let eqC = (x).toFixed(2);
 
     return {
         equation: `$$A(g) + B(g) \\rightleftharpoons C(g)$$`,
-        given: `
-            $K_c = ${K}$<br>
-            Initial: [A] = ${initA}, [B] = ${initB}
-        `,
-        question: `Determine equilibrium concentrations (assume simple change).`,
-        answer: `
-            [A] = ${eqA} M<br>
-            [B] = ${eqB} M<br>
-            [C] = ${eqC} M
-        `,
-        explanation: `
-            ICE Table:<br>
-            I: ${initA}, ${initB}, 0<br>
-            C: -x, -x, +x<br>
-            E: ${eqA}, ${eqB}, ${eqC}<br><br>
-
-            Values chosen to avoid quadratic solving.
-        `
+        given: `\\( K_c = ${K} \\). <br>Initial: [A] = ${initA} M, [B] = ${initB} M`,
+        question: `Determine equilibrium concentrations (assume a simple change of x=0.5 for practice).`,
+        answer: `[A] = ${eqA} M, [B] = ${eqB} M, [C] = ${eqC} M`,
+        explanation: `Subtract the change (x) from reactants and add to products in your ICE table.`
     };
 }
 
-// ---------- TYPE 3: Q vs K ----------
+// --- TYPE: Q vs K (Your Original Logic) ---
 function genQProblem() {
     let A = rand(0.5, 2.0);
     let B = rand(0.5, 2.0);
     let C = rand(0.1, 1.0);
-
     let K = rand(0.5, 2.0);
     let Q = (C / (A * B)).toFixed(2);
-
-    let direction = "";
-
-    if (Q > K) direction = "shift left (toward reactants)";
-    else if (Q < K) direction = "shift right (toward products)";
-    else direction = "at equilibrium";
+    let direction = Q > K ? "shift LEFT (toward reactants)" : "shift RIGHT (toward products)";
 
     return {
         equation: `$$A(g) + B(g) \\rightleftharpoons C(g)$$`,
-        given: `
-            [A] = ${A}, [B] = ${B}, [C] = ${C}<br>
-            $K_c = ${K}$
-        `,
-        question: `Calculate Q and determine direction of shift.`,
-        answer: `
-            $Q = ${Q}$<br>
-            System will ${direction}
-        `,
-        explanation: `
-            $Q = \\frac{[C]}{[A][B]} = \\frac{${C}}{(${A})(${B})} = ${Q}$<br><br>
-
-            Compare Q to K:<br>
-            ${Q} ${Q > K ? ">" : "<"} ${K}<br><br>
-
-            Therefore, system will ${direction}.
-        `
+        given: `[A] = ${A}, [B] = ${B}, [C] = ${C}. <br> \\( K_c = ${K} \\)`,
+        question: `Calculate \\( Q \\) and determine the direction of shift.`,
+        answer: `\\( Q = ${Q} \\). System will ${direction}.`,
+        explanation: `\\( Q = \\frac{[C]}{[A][B]} = ${Q} \\). Since \\( Q ${Q > K ? ">" : "<"} K \\), the system moves to reach equilibrium.`
     };
 }
 
-// ====== RANDOM NUMBER HELPER ======
-function rand(min, max) {
-    return (Math.random() * (max - min) + min).toFixed(2);
+// --- TYPE: Acid/Base pH from Ka ---
+function genAcidBase() {
+    const acid = ACIDS[Math.floor(Math.random() * ACIDS.length)];
+    const conc = rand(0.1, 0.6);
+    const hPlus = Math.sqrt(acid.Ka * conc);
+    const ph = -Math.log10(hPlus);
+
+    return {
+        equation: `$$\\text{${acid.formula}}(aq) + H_2O(l) \\rightleftharpoons H_3O^+(aq) + \\text{A}^-(aq)$$`,
+        given: `A solution of ${acid.name} has a concentration of ${conc} M. <br> \\( K_a = ${acid.Ka.toExponential(2)} \\)`,
+        question: `Calculate the pH of the solution.`,
+        answer: `pH = ${ph.toFixed(2)}`,
+        explanation: `1. Use \\( K_a = \\frac{x^2}{[Acid]} \\) <br> 2. \\( x = \\sqrt{(${acid.Ka.toExponential(2)})(${conc})} = ${hPlus.toExponential(2)} \\) <br> 3. \\( pH = -\\log(${hPlus.toExponential(2)}) = ${ph.toFixed(2)} \\)`
+    };
+}
+
+// --- TYPE: Common Ion Acid (Buffer) ---
+function genCommonIonAcid() {
+    const acid = ACIDS[0]; // Acetic
+    const acidConc = rand(0.1, 0.5);
+    const saltConc = rand(0.1, 0.5);
+    const pKa = -Math.log10(acid.Ka);
+    const ph = pKa + Math.log10(saltConc / acidConc);
+
+    return {
+        equation: `$$\\text{HC}_2\text{H}_3\text{O}_2 \rightleftharpoons \text{H}^+ + \text{C}_2\text{H}_3\text{O}_2^-$$`,
+        given: `[Acetic Acid] = ${acidConc} M. [Sodium Acetate] = ${saltConc} M. <br> \\( K_a = 1.8 \\times 10^{-5} \\)`,
+        question: `Calculate the pH of this buffer solution (Common Ion Effect).`,
+        answer: `pH = ${ph.toFixed(2)}`,
+        explanation: `Use Henderson-Hasselbalch: <br> \\( pH = pK_a + \\log\\frac{[Base]}{[Acid]} \\) <br> \\( pH = 4.74 + \\log\\frac{${saltConc}}{${acidConc}} = ${ph.toFixed(2)} \\)`
+    };
+}
+
+// --- TYPE: Solubility (Ksp) ---
+function genKsp() {
+    const salt = SALTS[Math.floor(Math.random() * SALTS.length)];
+    let s, logic;
+    
+    if(salt.ratio === "1:1") {
+        s = Math.sqrt(salt.Ksp);
+        logic = `\\( K_{sp} = s^2 \\)`;
+    } else {
+        s = Math.pow(salt.Ksp / 4, 1/3);
+        logic = `\\( K_{sp} = 4s^3 \\)`;
+    }
+
+    return {
+        equation: `$$\\text{${salt.formula}}(s) \\rightleftharpoons \text{Dissolved Ions}$$`,
+        given: `The \\( K_{sp} \\) for ${salt.name} is ${salt.Ksp.toExponential(2)}.`,
+        question: `Calculate the molar solubility (s) of the salt in water.`,
+        answer: `\\( s = ${s.toExponential(2)} \\) M`,
+        explanation: `Set up the expression: ${logic}. <br> Solve for s: \\( s = \\text{${s.toExponential(2)}} \\) M.`
+    };
 }
 </script>
 </body>
