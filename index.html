@@ -203,6 +203,13 @@ const ACIDS = [
     { name: "Nitrous Acid", formula: "HNO_2", Ka: 4.0e-4 }
 ];
 
+const BASES = [
+    { name: "Ammonia", formula: "NH_3", Kb: 1.8e-5 },
+    { name: "Methylamine", formula: "CH_3NH_2", Kb: 4.4e-4 },
+    { name: "Ethylamine", formula: "C_2H_5NH_2", Kb: 5.6e-4 },
+    { name: "Pyridine", formula: "C_5H_5N", Kb: 1.7e-9 }
+];
+
 const SALTS = [
     { name: "Silver Chloride", formula: "AgCl", Ksp: 1.8e-10, ratio: "1:1" },
     { name: "Barium Sulfate", formula: "BaSO_4", Ksp: 1.1e-10, ratio: "1:1" },
@@ -210,7 +217,7 @@ const SALTS = [
     { name: "Calcium Carbonate", formula: "CaCO_3", Ksp: 3.3e-9, ratio: "1:1" }
 ];
 
-    const COMMON_IONS = [
+const COMMON_IONS = [
     { name: "Sodium Chloride", ion: "Cl^-", formula: "NaCl" },
     { name: "Silver Nitrate", ion: "Ag^+", formula: "AgNO_3" },
     { name: "Barium Nitrate", ion: "Ba^{2+}", formula: "Ba(NO_3)_2" },
@@ -272,10 +279,12 @@ function generateProblem() {
         if (type === "Q_direction") currentProblem = genQProblem();
     } 
     else if (activeTopic === 'acidbase') {
-        const types = ["pH_from_Ka", "common_ion_acid"];
+        const types = ["pH_from_Ka", "common_ion_acid", "pH_from_Kb"];
         const type = types[Math.floor(Math.random() * types.length)];
+        
         if (type === "pH_from_Ka") currentProblem = genAcidBase();
         if (type === "common_ion_acid") currentProblem = genCommonIonAcid();
+        if (type === "pH_from_Kb") currentProblem = genWeakBase(); // Added this
     }
     else if (activeTopic === 'solubility') {
         currentProblem = genKsp();
@@ -457,7 +466,32 @@ function genKspFromData() {
         answer: `\\( K_{sp} = ${ksp.toExponential(2)} \\)`,
         explanation: `1. Plug the molar solubility into the \\( K_{sp} \\) expression: <br> ${logic} <br> 2. \\( K_{sp} = ${ksp.toExponential(2)} \\)`
     };
+
+// --- TYPE: Weak Base pH from Kb ---
+function genWeakBase() {
+    const base = BASES[Math.floor(Math.random() * BASES.length)];
+    const conc = rand(0.1, 0.6);
+    
+    // Math: [OH-] = sqrt(Kb * C)
+    const ohMinus = Math.sqrt(base.Kb * conc);
+    const poh = -Math.log10(ohMinus);
+    const ph = 14 - poh;
+
+    return {
+        equation: `$$\\text{${base.formula}}(aq) + H_2O(l) \\rightleftharpoons \\text{${base.formula}}H^+(aq) + OH^-(aq)$$`,
+        given: `A solution of ${base.name} has a concentration of ${conc} M. <br> \\( K_b = ${base.Kb.toExponential(2)} \\)`,
+        question: `Calculate the pH of the solution.`,
+        answer: `pH = ${ph.toFixed(2)}`,
+        explanation: `
+            1. This is a base, so we find \\( [OH^-] \\) first: <br>
+            2. \\( K_b = \\frac{x^2}{[Base]} \\Rightarrow x = \\sqrt{(${base.Kb.toExponential(2)})(${conc})} \\) <br>
+            3. \\( [OH^-] = ${ohMinus.toExponential(2)} \\) M <br>
+            4. \\( pOH = -\\log(${ohMinus.toExponential(2)}) = ${poh.toFixed(2)} \\) <br>
+            5. \\( pH = 14.00 - ${poh.toFixed(2)} = ${ph.toFixed(2)} \\)
+        `
+    };
 }
+
 
 // --- Sub-Type 3: Common Ion Effect ---
 function genCommonIonSolubility() {
