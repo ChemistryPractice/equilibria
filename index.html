@@ -210,6 +210,13 @@ const SALTS = [
     { name: "Calcium Carbonate", formula: "CaCO_3", Ksp: 3.3e-9, ratio: "1:1" }
 ];
 
+    const COMMON_IONS = [
+    { name: "Sodium Chloride", ion: "Cl^-", formula: "NaCl" },
+    { name: "Silver Nitrate", ion: "Ag^+", formula: "AgNO_3" },
+    { name: "Barium Nitrate", ion: "Ba^{2+}", formula: "Ba(NO_3)_2" },
+    { name: "Sodium Sulfate", ion: "SO_4^{2-}", formula: "Na_2SO_4" }
+];
+
 // =====================================================
 // 2. GLOBAL STATE & UTILITIES
 // =====================================================
@@ -399,6 +406,16 @@ function genCommonIonAcid() {
 }
 
 function genKsp() {
+    const subTypes = ["find_s", "find_ksp", "common_ion"];
+    const type = subTypes[Math.floor(Math.random() * subTypes.length)];
+    
+    if (type === "find_s") return genMolarSolubility();
+    if (type === "find_ksp") return genKspFromData();
+    if (type === "common_ion") return genCommonIonSolubility();
+}
+
+// --- Sub-Type 1: Find s from Ksp (Original) ---
+function genMolarSolubility() {
     const salt = SALTS[Math.floor(Math.random() * SALTS.length)];
     let s, logic;
     
@@ -411,11 +428,57 @@ function genKsp() {
     }
 
     return {
-        equation: `$$\\text{${salt.formula}}(s) \\rightleftharpoons \\text{Dissolved Ions}$$`,
+        equation: `$$\\text{${salt.formula}}(s) \\rightleftharpoons \\text{Ions}(aq)$$`,
         given: `The \\( K_{sp} \\) for ${salt.name} is ${salt.Ksp.toExponential(2)}.`,
-        question: `Calculate the molar solubility (s) of the salt in water.`,
+        question: `Calculate the molar solubility (s) of the salt in pure water.`,
         answer: `\\( s = ${s.toExponential(2)} \\) M`,
-        explanation: `Set up the expression: ${logic}. <br> Solve for s: \\( s = \\text{${s.toExponential(2)}} \\) M.`
+        explanation: `Set up the expression: ${logic}. <br> Solve for s: \\( s = \\sqrt[root]{K_{sp}/factor} \\). <br> \\( s = ${s.toExponential(2)} \\) M.`
+    };
+}
+
+// --- Sub-Type 2: Find Ksp from Concentrations ---
+function genKspFromData() {
+    const salt = SALTS[Math.floor(Math.random() * SALTS.length)];
+    const s = rand(0.0001, 0.005, 5); // Realistic small solubility
+    
+    let ksp, logic;
+    if(salt.ratio === "1:1") {
+        ksp = s * s;
+        logic = `\\( K_{sp} = [M^+][X^-] = (${s})^2 \\)`;
+    } else {
+        ksp = 4 * Math.pow(s, 3);
+        logic = `\\( K_{sp} = [M^{2+}][X^-]^2 = (${s})(2 \\times ${s})^2 = 4(${s})^3 \\)`;
+    }
+
+    return {
+        equation: `$$\\text{${salt.formula}}(s) \\rightleftharpoons \\text{Ions}(aq)$$`,
+        given: `The molar solubility (s) of ${salt.name} is found to be ${s.toExponential(2)} M.`,
+        question: `Calculate the solubility product constant, \\( K_{sp} \\).`,
+        answer: `\\( K_{sp} = ${ksp.toExponential(2)} \\)`,
+        explanation: `1. Plug the molar solubility into the \\( K_{sp} \\) expression: <br> ${logic} <br> 2. \\( K_{sp} = ${ksp.toExponential(2)} \\)`
+    };
+}
+
+// --- Sub-Type 3: Common Ion Effect ---
+function genCommonIonSolubility() {
+    // We'll stick to 1:1 salts for common ion to keep the "x is small" math clean for students
+    const salt = SALTS.filter(s => s.ratio === "1:1")[Math.floor(Math.random() * 2)];
+    const ionConc = rand(0.05, 0.2); 
+    
+    // Calculation: Ksp = [common ion][s] -> s = Ksp / common ion
+    const s = salt.Ksp / ionConc;
+
+    return {
+        equation: `$$\\text{${salt.formula}}(s) \\rightleftharpoons \\text{Ions}(aq)$$`,
+        given: `\\( K_{sp} \\) for ${salt.name} is ${salt.Ksp.toExponential(2)}. <br> The salt is dissolved in a ${ionConc} M solution of a common ion.`,
+        question: `Calculate the molar solubility (s) in this solution.`,
+        answer: `\\( s = ${s.toExponential(2)} \\) M`,
+        explanation: `
+            1. Expression: \\( K_{sp} = [\\text{Common Ion} + s][s] \\) <br>
+            2. Since \\( s \\) is very small, we approximate: \\( K_{sp} \\approx [\\text{Common Ion}][s] \\) <br>
+            3. \\( ${salt.Ksp.toExponential(2)} = (${ionConc})(s) \\) <br>
+            4. \\( s = ${s.toExponential(2)} \\) M.
+        `
     };
 }
 </script>
